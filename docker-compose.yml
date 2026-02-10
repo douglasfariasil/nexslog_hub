@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  api-hub:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=interop_db
+    ports:
+      - "5432:5432"
+  # Interface visual rápida para ver os dados (Dashboard)
+  dashboard:
+    image: curlimages/curl:latest # Placeholder para o Streamlit que faremos
+    command: ["tail", "-f", "/dev/null"]
