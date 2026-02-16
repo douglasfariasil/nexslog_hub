@@ -8,6 +8,10 @@ DATABASE_URL = os.getenv(
 )
 
 
+# sqlite_name = 'banco.db'
+# DATABASE_URL = f'sqlite:///{sqlite_name}'
+
+
 # O engine é o "motor" que conversa com o Postgres
 engine = create_engine(DATABASE_URL, echo=True)
 

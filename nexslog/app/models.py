@@ -14,3 +14,4 @@ class Order(SQLModel, table=True):
     total_value: float
     status: str = Field(default='RECEIVED')  # Status inicial no Hub
     created_at: datetime = Field(default_factory=datetime.now)
+    tracking_code: Optional[str] = Field(default=None)
