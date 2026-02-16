@@ -29,9 +29,8 @@ class WMSAdapter:
         if db_order.status == 'SHIPPED':
             raise HTTPException(
                 status_code=HTTPStatus.BAD_REQUEST,
-                detail=f'Pedido {order_id}'
-                'já enviado.',
-            )
+                detail=f'Pedido {order_id} já enviado',
+            )  # não pode ter o status alterado.
 
         # Evita update se o status for o mesmo
         if db_order.status == new_status:

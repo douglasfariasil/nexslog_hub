@@ -116,5 +116,56 @@ def test_prevent_update_shipped_order(client: TestClient):
     )
 
     # Valida se bloqueou com 400(Bad Request)
+
     assert response.status_code == HTTPStatus.BAD_REQUEST
     assert 'já enviado' in response.json()['detail']
+
+
+def test_full_supply_chain_flow(client: TestClient):
+    """
+    Simula o ciclo de vida completo:
+    ERP (Cria) -> WMS (Processa) -> TMS (Envia) -> Bloqueio WMS
+    """
+
+    order_id = 'PED-FLOW-123'
+
+    # --- PASSO 1: ERP Ingerindo Pedido ---
+
+    erp_res = client.post(
+        '/ingerir/erp',
+        json={
+            'order_id': order_id,
+            'customer_name': 'Rex Logistica',
+            'total_value': 2500.0,
+        },
+    )
+    assert erp_res.status_code == HTTPStatus.OK
+
+    # --- PASSO 2: WMS Atualizando para PICKING ---
+
+    wms_res = client.patch(
+        '/ingerir/wms/atualizar',
+        params={'order_id': order_id, 'new_status': 'PICKING'},
+    )
+    assert wms_res.status_code == HTTPStatus.OK
+    assert wms_res.json()['new_status'] == 'PICKING'
+
+    # --- PASSO 3: TMS Despachando o Pedido ---
+
+    tms_res = client.patch(
+        '/ingerir/tms/dispatch',
+        params={'order_id': order_id, 'tracking': 'BR-123456-X'},
+    )
+    assert tms_res.status_code == HTTPStatus.OK
+    assert tms_res.json()['message'] == 'Pedido enviado'
+
+    # --- PASSO 4: Validação de Segurança (WMS tentando voltar status) ---
+
+    block_res = client.patch(
+        '/ingerir/wms/atualizar',
+        params={'order_id': order_id, 'new_status': 'PICKING'},
+    )
+    assert block_res.status_code == HTTPStatus.BAD_REQUEST
+    assert 'já enviado' in block_res.json()['detail']
+
+    print(f'\n✅ Fluxo completo validado para o pedido: {order_id}')
