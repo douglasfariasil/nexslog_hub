@@ -3,24 +3,17 @@ version: "3.8"
 services:
   api-hub:
     build: .
+    container_name: nexslog-api
     ports:
-      - "8080:8080"
+      - "8000:8000"
     volumes:
       - .:/app
+    command: uvicorn nexslog.app.main:app --host 0.0.0.0 --port 8000 --reload
     environment:
-      - PYTHONPATH=/app
-    depends_on:
-      - db
+      - PYTHONUNBUFFERED=1
+    restart: always
 
-  db:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=pass
-      - POSTGRES_DB=interop_db
-    ports:
-      - "5432:5432"
-  # Interface visual rápida para ver os dados (Dashboard)
-  dashboard:
-    image: curlimages/curl:latest # Placeholder para o Streamlit que faremos
-    command: ["tail", "-f", "/dev/null"]
+  # # Interface visual rápida para ver os dados (Dashboard)
+  # dashboard:
+  #   image: curlimages/curl:latest # Placeholder para o Streamlit que faremos
+  #   command: ["tail", "-f", "/dev/null"]

@@ -132,6 +132,10 @@ ENV/
 env.bak/
 venv.bak/
 
+# SQLite Database (nosso projeto)
+banco.db
+banco.db-journal
+
 # Spyder project settings
 .spyderproject
 .spyproject

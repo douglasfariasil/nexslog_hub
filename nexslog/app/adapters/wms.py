@@ -3,7 +3,7 @@ from http import HTTPStatus
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
-from nexslog.app.models import Order
+from nexslog.database.models import Order
 
 
 class WMSAdapter:

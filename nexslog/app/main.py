@@ -5,8 +5,8 @@ from fastapi import Depends, FastAPI, HTTPException
 from sqlmodel import Session, select
 
 from nexslog.app.adapters.wms import WMSAdapter
-from nexslog.app.database import create_db_and_tables, get_session
-from nexslog.app.models import Order
+from nexslog.database.database import create_db_and_tables, get_session
+from nexslog.database.models import Order
 
 # O Endpoint da API
 app = FastAPI(title='NexsLog Hub')
@@ -65,11 +65,13 @@ async def dispatch_order(
         )
 
     db_order.status = 'SHIPPED'
-    db_order.tracking_code = tracking
+    db_order.tracking = tracking
     session.add(db_order)
     session.commit()
     return {'message': 'Pedido enviado', 'tracking': tracking}
 
 
+# Para inicia o fastapi: fastapi dev nexslog/app/main.py
+# Para rodar o dashboard: streamlit run nexslog/dashboard.py
+# Para abrir o navegador: http://localhost:8000/docs
 # Para subir a máquina container: docker compose up --build
-# Para abrir o navegador: http://localhost:8080/docs

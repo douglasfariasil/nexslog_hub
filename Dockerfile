@@ -28,4 +28,4 @@ COPY . .
 
 
 # Comando para rodar a API
-CMD ["uvicorn", "nexslog.app.main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
+CMD ["uvicorn", "nexslog.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

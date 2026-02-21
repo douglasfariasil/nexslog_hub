@@ -169,3 +169,29 @@ def test_full_supply_chain_flow(client: TestClient):
     assert 'já enviado' in block_res.json()['detail']
 
     print(f'\n✅ Fluxo completo validado para o pedido: {order_id}')
+
+
+def test_full_interoperability_flow(client: TestClient):
+    """Testa o ciclo de vida completo: ERP -> WMS -> TMS"""
+
+    client.post(
+        '/ingerir/erp',
+        json={
+            'order_id': 'PEDIDO-DASH-01',
+            'customer_name': 'Douglas NexsLog',
+            'total_value': 450.00,
+        },
+    )
+
+    client.patch(
+        '/ingerir/wms/atualizar',
+        params={'order_id': 'PEDIDO-DASH-01', 'new_status': 'PICKING'},
+    )
+
+    response = client.patch(
+        '/ingerir/tms/dispatch',
+        params={'order_id': 'PEDIDO-DASH-01', 'tracking': 'TRK-123456'},
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json()['tracking'] == 'TRK-123456'

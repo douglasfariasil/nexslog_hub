@@ -1,23 +1,17 @@
-import os
-
 from sqlmodel import Session, SQLModel, create_engine
 
 # A URL vem do ambiente que definimos no docker compose
-DATABASE_URL = os.getenv(
-    'DATABASE_URL', 'postgresql://user:pass@db:5432/interop_db'
-)
-
-
-# sqlite_name = 'banco.db'
-# DATABASE_URL = f'sqlite:///{sqlite_name}'
+sqlite_url = 'sqlite:///./banco.db'
 
 
 # O engine é o "motor" que conversa com o Postgres
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(
+    sqlite_url, connect_args={'check_same_thread': False}, echo=True
+)
 
 
 def create_db_and_tables():
-    """Cria as tabelas no banco de dados se elas não existirem"""
+    """Cria as tabelas no arquivo banco.db"""
     SQLModel.metadata.create_all(engine)
 
 
