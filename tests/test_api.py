@@ -1,7 +1,5 @@
 from http import HTTPStatus
 
-from nexslog.app.main import app
-
 
 def test_criar_pedido_erp_sucesso(client):
     """Testa se a API aceita um pedido novo do ERP corretamente"""
@@ -35,7 +33,8 @@ def test_atualizar_wms_sucesso(client):
     )
 
     response = client.patch(
-        '/ingerir/wms/atualizar', params={'order_id': 'TEST-WMS', 'new_status': 'PICKING'}
+        '/ingerir/wms/atualizar',
+        params={'order_id': 'TEST-WMS', 'new_status': 'PICKING'},
     )
 
     assert response.status_code == HTTPStatus.OK

@@ -1,8 +1,9 @@
 import os
+
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session, SQLModel, create_engine
 from sqlalchemy.pool import StaticPool
+from sqlmodel import Session, SQLModel, create_engine
 
 # Indica ao app que está em modo de teste para impedir criação automática
 # do banco de dados de produção durante os testes.
