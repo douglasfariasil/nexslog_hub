@@ -1,42 +1,9 @@
 import os
 from http import HTTPStatus
 
-import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session, SQLModel, create_engine
-from sqlmodel.pool import StaticPool
-
-from nexslog.app.main import app, get_session
 
 os.environ['TESTING'] = 'True'
-
-
-engine_test = create_engine(
-    'sqlite://', connect_args={'check_same_thread': False}, poolclass=StaticPool
-)
-
-
-# --- CONFIGURAÇÃO DO BANCO DE TESTES (SQLlite em memória) ---
-@pytest.fixture(name='session')
-def session_fixture():
-
-    SQLModel.metadata.create_all(engine_test)
-    with Session(engine_test) as session:
-        yield session
-    SQLModel.metadata.drop_all(engine_test)
-
-
-@pytest.fixture(name='client')
-def client_fixture(session: Session):
-    def get_session_override():
-        return session
-
-    app.dependency_overrides[get_session] = get_session_override
-
-    with TestClient(app) as client:
-        yield client
-
-    app.dependency_overrides.clear()
 
 
 def test_create_order_from_erp(client: TestClient):
@@ -53,6 +20,7 @@ def test_create_order_from_erp(client: TestClient):
 
     assert response.status_code == HTTPStatus.OK
     assert response.json()['status'] == 'success'
+    assert response.json()['hub_id'] == 'PED-TESTE-01'
 
 
 def test_update_status_from_wms(client: TestClient):
