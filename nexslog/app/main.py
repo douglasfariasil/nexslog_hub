@@ -80,5 +80,6 @@ async def dispatch_order(
 
 # Para inicia o fastapi: fastapi dev nexslog/app/main.py
 # Para rodar o dashboard: streamlit run nexslog/dashboard.py
+
 # Para abrir o navegador: http://localhost:8000/docs
 # Para subir a máquina container: docker compose up --build

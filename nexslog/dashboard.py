@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 from sqlmodel import Session, create_engine, select
 
+from nexslog.analytics.engine import check_system_health, predict_bottleneck
 from nexslog.database.models import Order
 
 # Configuração da página
@@ -120,7 +121,6 @@ if pagina == '📊 Dashboard BI':
                     f'{atrasados} Críticos',
                     delta_color='inverse',
                 )
-
                 col3.metric('Lead Time Médio', lead_time)
                 col4.metric('Faturamento Gerido', f'R$ {faturamento_atual:,.2f}')
 
@@ -147,6 +147,51 @@ if pagina == '📊 Dashboard BI':
                 st.subheader('📈 Tendência de Entrada')
                 df_trend = df_filtered.copy().set_index('created_at')
                 st.line_chart(df_trend.resample('h').size(), color='#29b5e8')
+
+                # --- NOVO: SEÇÃO DE SAÚDE E PREDIÇÃO ---
+                st.divider()
+                col_h, col_p = st.columns([1, 2])
+
+                with col_h:
+                    st.subheader('📡 Saúde do Hub')
+                    health = check_system_health(df)
+                    for sys, status in health.items():
+                        color = '🟢' if status else '🔴'
+                        label = 'Ativo' if status else 'Sem Dados (24h)'
+                        st.write(f'{color} **{sys}**: {label}')
+
+                with col_p:
+                    st.subheader('🔮 Análise Preditiva')
+                    msg = predict_bottleneck(df)
+                    st.info(msg)
+
+                # --- NOVO: MAPA DE DISTRIBUIÇÃO ---
+                st.divider()
+                st.subheader(
+                    '🗺️ Capilaridade de Entregas (Distribuição Geográfica)'
+                )
+
+                # Mock de coordenadas para as cidades (Exemplo)
+                coords = {
+                    'São Paulo': [-23.5505, -46.6333],
+                    'Rio de Janeiro': [-22.9068, -43.1729],
+                    'Curitiba': [-25.4284, -49.2733],
+                    'Belo Horizonte': [-19.9167, -43.9345],
+                }
+
+                # Criando dataframe para o mapa
+                map_data = df_filtered[
+                    df_filtered['city'].isin(coords.keys())
+                ].copy()
+                if not map_data.empty:
+                    map_data['lat'] = map_data['city'].map(lambda x: coords[x][0])
+                    map_data['lon'] = map_data['city'].map(lambda x: coords[x][1])
+                    st.map(map_data[['lat', 'lon']])
+                else:
+                    st.write(
+                        "Adicione cidades como 'São Paulo' ou"
+                        "'Rio de Janeiro' nos pedidos para visualizar o mapa."
+                    )
 
                 st.subheader('📑 Rastreabilidade Total')
                 st.dataframe(
