@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 import pandas as pd
 import streamlit as st
 from sqlmodel import Session, create_engine, select
@@ -5,115 +7,193 @@ from sqlmodel import Session, create_engine, select
 from nexslog.database.models import Order
 
 # Configuração da página
-st.set_page_config(page_title='NEXSLOG Hub - Dashboard', layout='wide')
+st.set_page_config(
+    page_title='NEXSLOG Hub - Intelligence', layout='wide', page_icon='🚚'
+)
 
-# Conexão com Banco (Usa a mesma lógica do app)
+# Conexão com Banco
 sqlite_url = 'sqlite:///./banco.db'
 engine = create_engine(sqlite_url, connect_args={'check_same_thread': False})
 
-
-st.title('🚚 NEXSLOG Hub: Monitor de Interoperabilidade')
+# --- ESTILIZAÇÃO CUSTOMIZADA ---
 st.markdown(
-    'Visualização em tempo real dos pedidos integrados entre ERP, WMS e TMS.',
+    """
+    <style>
+    /* Cartões com fundo semi-transparente para ler no Dark Mode */
+    [data-testid="stMetric"] {
+        background-color: rgba(255, 255, 255, 0.05); /* Um
+        toque de brilho no fundo */ padding: 15px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    /* Forçar a cor do rótulo e do valor para branco/claro */
+    [data-testid="stMetricLabel"] {
+        color: #e0e0e0 !important;
+    }
+    [data-testid="stMetricValue"] {
+        color: #ffffff !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
+# --- 3. MENU LATERAL DE NAVEGAÇÃO ---
+st.sidebar.title('🚀 NEXSLOG Control')
+pagina = st.sidebar.radio(
+    'Navegar para:', ['📊 Dashboard BI', '📥 Importar Arquivos']
+)
 
-# Interface de Controle
-col_btn, col_search = st.columns([1, 3])
-with col_btn:
-    if st.button('🔄 Atualizar Dados'):
-        st.rerun()
+# --- PÁGINA 1: DASHBOARD ---
+if pagina == '📊 Dashboard BI':
+    st.title('🚚 NEXSLOG Hub: Inteligência Logística')
+    st.markdown('Monitoramento estratégico de integração ERP ➔ WMS ➔ TMS')
 
-with col_search:
-    # Filtro de busca por cliente
-    search_query = st.text_input('🔍 Filtrar por Cliente', '')
+    # --- BUSCA E PROCESSAMENTO ---
+    try:
+        with Session(engine) as session:
+            statement = select(Order)
+            orders = session.exec(statement).all()
 
-
-# Busca e Exibição de Dados
-try:
-    with Session(engine) as session:
-        statement = select(Order)
-        orders = session.exec(statement).all()
-
-        if orders:
-            df = pd.DataFrame([o.model_dump() for o in orders])
-
-            # Garante que a coluna existe para o Streamlit não reclamar
-            if 'tracking' not in df.columns:
-                df['tracking'] = None
-
-            if search_query:
-                df = df[
-                    df['customer_name'].str.contains(search_query, case=False)
-                ]
-
-            st.divider()
-            kpi1, kpi2, kpi3 = st.columns(3)
-            kpi1.metric('Total de Pedidos', len(df))
-            kpi2.metric('Aguardando Envio', len(df[df['status'] != 'SHIPPED']))
-            kpi3.metric('Despachados', len(df[df['status'] == 'SHIPPED']))
-
-            st.divider()
-            col_chart1, col_chart2 = st.columns(2)
-
-            # 📊 Gráfico 1: Pedidos por Status (O que já tínhamos)
-            with col_chart1:
-                st.subheader('📊 Volume por Status')
-                st.bar_chart(df['status'].value_counts())
-
-            # 💰 Gráfico 2: Faturamento por Cliente
-            with col_chart2:
-                st.subheader('💰 Faturamento por Cliente')
-                # Agrupa os valores somando o total_value por cliente
-                revenue = (
-                    df
-                    .groupby('customer_name')['total_value']
-                    .sum()
-                    .sort_values(ascending=False)
+            if orders:
+                df = pd.DataFrame([o.model_dump() for o in orders])
+                df['created_at'] = pd.to_datetime(df['created_at'])
+                df['updated_at'] = pd.to_datetime(
+                    df.get('updated_at', df['created_at'])
                 )
-                st.bar_chart(revenue)
 
-            st.divider()
+                # Filtros na Sidebar
+                st.sidebar.divider()
+                st.sidebar.header('🔍 Filtros de Auditoria')
+                search_query = st.sidebar.text_input('Cliente ou Pedido', '')
+                status_filter = st.sidebar.multiselect(
+                    'Status do Fluxo',
+                    df['status'].unique(),
+                    default=df['status'].unique(),
+                )
 
-            # Ajuste de colunas para bater com o simulador (usando 'tracking')
-            cols_to_show = [
-                'order_id',
-                'customer_name',
-                'total_value',
-                'status',
-                'tracking',
-                'created_at',
-            ]
+                df_filtered = df[df['status'].isin(status_filter)]
+                if search_query:
+                    mask = df_filtered['customer_name'].str.contains(
+                        search_query, case=False
+                    ) | df_filtered['order_id'].str.contains(
+                        search_query, case=False
+                    )
+                    df_filtered = df_filtered[mask]
 
-            # Garante que as colunas existem antes de filtrar
-            existing_cols = [c for c in cols_to_show if c in df.columns]
+                # Meta de Faturamento
+                st.subheader('🎯 Meta de Faturamento do Dia')
+                faturamento_atual = df_filtered['total_value'].sum()
+                meta_diaria = 100000.0
+                progresso = min(faturamento_atual / meta_diaria, 1.0)
+                col_prog, col_perc = st.columns([4, 1])
+                col_prog.progress(progresso)
+                col_perc.markdown(
+                    f'**{progresso * 100:.1f}%** (R$ {meta_diaria:,.0f})'
+                )
 
-            # 💾 Função para converter o DataFrame em CSV (cache para performance)
-            @st.cache_data
-            def convert_df(df_to_convert):
-                return df_to_convert.to_csv(index=False).encode('utf-8-sig')
+                st.divider()
 
-            csv_data = convert_df(df[existing_cols])
+                # KPIs
+                col1, col2, col3, col4 = st.columns(4)
+                now = datetime.now()
+                atrasados = len(
+                    df_filtered[
+                        (df_filtered['status'] == 'RECEIVED')
+                        & (df_filtered['created_at'] < now - timedelta(hours=4))
+                    ]
+                )
 
-            # Cria o botão de download
-            st.download_button(
-                label='📥 Baixar Relatório (CSV)',
-                data=csv_data,
-                file_name='relatorio_pedidos_nexslog.csv',
-                mime='text/csv',
-                help='Clique para baixar os dados filtrados em formato Excel/CSV',
-            )
+                shipped = df_filtered[df_filtered['status'] == 'SHIPPED']
+                if not shipped.empty:
+                    mean_hours = (
+                        shipped['updated_at'] - shipped['created_at']
+                    ).dt.total_seconds().mean() / 3600
+                    lead_time = f'{mean_hours:.1f}h'
+                else:
+                    lead_time = 'N/A'
 
-            # 📑 Tabela Detalhada (Abaixo dos gráficos para melhor leitura)
-            st.subheader('📑 Listagem Detalhada de Pedidos')
-            st.dataframe(
-                df[existing_cols], use_container_width=True, hide_index=True
-            )
+                col1.metric('Volume Total', len(df_filtered))
+                col2.metric(
+                    'Aguardando WMS',
+                    len(df_filtered[df_filtered['status'] == 'RECEIVED']),
+                    f'{atrasados} Críticos',
+                    delta_color='inverse',
+                )
 
-        else:
-            st.info(
-                '📭 Nenhum pedido encontrado no banco de dados até o momento.'
-            )
+                col3.metric('Lead Time Médio', lead_time)
+                col4.metric('Faturamento Gerido', f'R$ {faturamento_atual:,.2f}')
 
-except Exception as e:
-    st.error(f'❌ Erro ao conectar no banco de dados: {e}')
+                # Gráficos e Tabela (Seu código original continua aqui...)
+                c1, c2 = st.columns(2)
+
+                with c1:
+                    st.subheader('📊 Gargalos por Status')
+                    st.bar_chart(
+                        df_filtered['status'].value_counts(), horizontal=True
+                    )
+                with c2:
+                    st.subheader('💰 Concentração de Receita')
+                    revenue = (
+                        df_filtered
+                        .groupby('customer_name')['total_value']
+                        .sum()
+                        .sort_values(ascending=False)
+                        .head(10)
+                    )
+                    st.bar_chart(revenue)
+
+                st.divider()
+                st.subheader('📈 Tendência de Entrada')
+                df_trend = df_filtered.copy().set_index('created_at')
+                st.line_chart(df_trend.resample('h').size(), color='#29b5e8')
+
+                st.subheader('📑 Rastreabilidade Total')
+                st.dataframe(
+                    df_filtered[
+                        [
+                            'order_id',
+                            'customer_name',
+                            'total_value',
+                            'status',
+                            'created_at',
+                        ]
+                    ],
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+            else:
+                st.info('📭 Aguardando integração de pedidos...')
+    except Exception as e:
+        st.error(f'❌ Erro: {e}')
+
+# --- PÁGINA 2: IMPORTAÇÃO ---
+else:
+    st.title('📥 Importação Massiva de Dados')
+    st.markdown('Suba arquivos Excel ou CSV para alimentar o Hub sem usar a API.')
+
+    arquivo = st.file_uploader('Arraste sua planilha aqui', type=['csv', 'xlsx'])
+
+    if arquivo:
+        df_imp = (
+            pd.read_csv(arquivo)
+            if arquivo.name.endswith('.csv')
+            else pd.read_excel(arquivo)
+        )
+        st.write('🔍 Prévia dos dados:')
+        st.dataframe(df_imp.head())
+
+        if st.button('🚀 Confirmar Carga no Banco'):
+            with Session(engine) as session:
+                for _, row in df_imp.iterrows():
+                    session.add(
+                        Order(
+                            order_id=str(row['order_id']),
+                            customer_name=row['customer_name'],
+                            total_value=row['total_value'],
+                            status='RECEIVED',
+                        )
+                    )
+                session.commit()
+            st.success(f'✅ {len(df_imp)} pedidos importados!')

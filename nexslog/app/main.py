@@ -66,9 +66,16 @@ async def dispatch_order(
 
     db_order.status = 'SHIPPED'
     db_order.tracking = tracking
+
     session.add(db_order)
     session.commit()
-    return {'message': 'Pedido enviado', 'tracking': tracking}
+    session.refresh(db_order)
+
+    return {
+        'message': 'Pedido enviado',
+        'tracking': tracking,
+        'updated_at': db_order.updated_at,
+    }
 
 
 # Para inicia o fastapi: fastapi dev nexslog/app/main.py
