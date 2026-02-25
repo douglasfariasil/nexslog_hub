@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta
 
 import pandas as pd
@@ -6,6 +7,9 @@ from sqlmodel import Session, create_engine, select
 
 from nexslog.analytics.engine import check_system_health, predict_bottleneck
 from nexslog.database.models import Order
+
+API_URL = os.getenv('API_URL', 'http://localhost:8000')
+
 
 # Configuração da página
 st.set_page_config(

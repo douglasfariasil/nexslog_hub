@@ -13,6 +13,20 @@ services:
       - PYTHONUNBUFFERED=1
     restart: always
 
+  dashboard:
+    build: .
+    container_name: nexslog-dashboard
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+    # O Streamlit precisa saber onde a API está.
+    # No Docker, o host da API vira o nome do serviço: http://api-hub:8000
+    command: streamlit run nexslog/dashboard.py --server.port 8501 --server.address 0.0.0.0
+    depends_on:
+      - api-hub
+    restart: always
+
   # # Interface visual rápida para ver os dados (Dashboard)
   # dashboard:
   #   image: curlimages/curl:latest # Placeholder para o Streamlit que faremos
