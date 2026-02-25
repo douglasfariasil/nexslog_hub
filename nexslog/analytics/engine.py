@@ -43,6 +43,6 @@ def predict_bottleneck(df):
             ' PICKING nas próximas 12h se o ritmo persistir.'
         )
     return (
-        '✅ Operação está fluindo:'
+        '✅ Operação está fluindo: '
         'A vazão de saída está maior ou igual à de entrada.'
     )
