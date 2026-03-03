@@ -1,10 +1,8 @@
 from sqlmodel import Session, SQLModel, create_engine
 
-# A URL vem do ambiente que definimos no docker compose
 sqlite_url = 'sqlite:///./banco.db'
 
 
-# O engine é o "motor" que conversa com o Postgres
 engine = create_engine(
     sqlite_url, connect_args={'check_same_thread': False}, echo=True
 )
