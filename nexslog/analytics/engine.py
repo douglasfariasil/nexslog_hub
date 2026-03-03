@@ -8,7 +8,7 @@ def check_system_health(df):
     now = datetime.now()
     last_24h = now - timedelta(hours=24)
 
-    # Filtra pedidos recentes
+
     recent_df = df[df['updated_at'] >= last_24h]
 
     health = {
@@ -26,15 +26,15 @@ def predict_bottleneck(df):
     now = datetime.now()
     last_3h = now - timedelta(hours=3)
 
-    # Pedidos que entraram nas últimas 3h
+    
     recent_inbound = len(df[df['created_at'] >= last_3h])
 
-    # Pedidos que saíram (SHIPPED) nas últimas 3h
+    
     recent_outbound = len(
         df[(df['status'] == 'SHIPPED') & (df['updated_at'] >= last_3h)]
     )
 
-    # Cálculo simples de vazão
+    
     gap = recent_inbound - recent_outbound
 
     if gap > 0:
