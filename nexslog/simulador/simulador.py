@@ -5,11 +5,9 @@ import requests
 
 BASE_URL = 'http://localhost:8000'
 
-# Constantes para evitar "Magic Values"
 probabilidade_wms = 0.3
 probabilidade_tms = 0.6
 
-# Listas para gerar dados aleatórios
 clientes = [
     'Logítica Express',
     'Varejo Total',
@@ -27,7 +25,6 @@ def simular_pedidos(quantidade=50):
     for i in range(1, quantidade + 1):
         order_id = f'PED-SIM-{random.randint(1000, 9999)}-{i}'
 
-        # Passo: ERP cria o pedido
         payload_erp = {
             'order_id': order_id,
             'customer_name': random.choice(clientes),
@@ -35,21 +32,19 @@ def simular_pedidos(quantidade=50):
         }
 
         try:
-            # Envia para o ERP
             requests.post(f'{BASE_URL}/ingerir/erp', json=payload_erp)
 
             time.sleep(0.1)
 
-            # Sorteia se o pedido vai avançar no fluxo
             decisao = random.random()
 
-            if decisao > probabilidade_wms:  # 70% de chance de ir para o WMS
+            if decisao > probabilidade_wms:
                 requests.patch(
                     f'{BASE_URL}/ingerir/wms/atualizar',
                     params={'order_id': order_id, 'new_status': 'PICKING'},
                 )
 
-            if decisao > probabilidade_tms:  # 40% de chance de ser despachado TMS
+            if decisao > probabilidade_tms:
                 tracking = f'TRK-{random.randint(10000, 99999)}'
                 params = {'order_id': order_id, 'tracking': tracking}
                 requests.patch(f'{BASE_URL}/ingerir/tms/dispatch', params=params)
