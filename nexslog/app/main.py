@@ -12,7 +12,6 @@ from nexslog.database.models import Order
 app = FastAPI(title='NexsLog Hub')
 
 
-
 @app.on_event('startup')
 def on_startup():
     if os.getenv('TESTING') != 'True':
