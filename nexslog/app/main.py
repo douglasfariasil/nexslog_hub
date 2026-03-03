@@ -8,11 +8,11 @@ from nexslog.app.adapters.wms import WMSAdapter
 from nexslog.database.database import create_db_and_tables, get_session
 from nexslog.database.models import Order
 
-# O Endpoint da API
+
 app = FastAPI(title='NexsLog Hub')
 
 
-# Cria as tabelas assim que o app inicia
+
 @app.on_event('startup')
 def on_startup():
     if os.getenv('TESTING') != 'True':
@@ -24,7 +24,7 @@ async def receive_erp_order(
     order_data: Order, session: Session = Depends(get_session)
 ):
 
-    # Adiciona o pedido ao banco de dados
+    
     session.add(order_data)
     session.commit()
     session.refresh(order_data)
@@ -40,7 +40,7 @@ async def receive_erp_order(
 async def update_from_wms(
     order_id: str, new_status: str, session: Session = Depends(get_session)
 ):
-    # O Adapter já valida se existe e se pode atualizar
+    
     updated_order = WMSAdapter.process_status_update(
         session, order_id, new_status
     )
@@ -76,10 +76,3 @@ async def dispatch_order(
         'tracking': tracking,
         'updated_at': db_order.updated_at,
     }
-
-
-# Para inicia o fastapi: fastapi dev nexslog/app/main.py
-# Para rodar o dashboard: streamlit run nexslog/dashboard.py
-
-# Para abrir o navegador: http://localhost:8000/docs
-# Para subir a máquina container: docker compose up --build
