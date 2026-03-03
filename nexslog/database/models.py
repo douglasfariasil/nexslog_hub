@@ -4,7 +4,6 @@ from typing import Optional
 from sqlmodel import Column, DateTime, Field, SQLModel, func
 
 
-# O "Contrato" entre o ERP e a ferramenta
 class Order(SQLModel, table=True):
     """
     Esta classe representa o contrato de dados entre o ERP e o Hub NEXSLOG.
@@ -18,7 +17,7 @@ class Order(SQLModel, table=True):
     order_id: str = Field(index=True, unique=True)
     customer_name: str
     total_value: float
-    status: str = Field(default='RECEIVED')  # Status inicial no Hub
+    status: str = Field(default='RECEIVED')
     city: str = Field(default='São Paulo')
     tracking: Optional[str] = Field(default=None)
 
@@ -27,7 +26,6 @@ class Order(SQLModel, table=True):
         sa_column=Column(DateTime(timezone=True), server_default=func.now()),
     )
 
-    # Data de atualização (muda a cada alteração no banco)
     updated_at: datetime = Field(
         default_factory=datetime.now,
         sa_column=Column(
@@ -37,5 +35,4 @@ class Order(SQLModel, table=True):
         ),
     )
 
-    # Campo opcional para o mapa de calor futuro
     city: Optional[str] = Field(default='São Paulo')
