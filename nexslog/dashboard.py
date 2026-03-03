@@ -11,16 +11,13 @@ from nexslog.database.models import Order
 API_URL = os.getenv('API_URL', 'http://localhost:8000')
 
 
-# Configuração da página
 st.set_page_config(
     page_title='NEXSLOG Hub - Intelligence', layout='wide', page_icon='🚚'
 )
 
-# Conexão com Banco
 sqlite_url = 'sqlite:///./banco.db'
 engine = create_engine(sqlite_url, connect_args={'check_same_thread': False})
 
-# --- ESTILIZAÇÃO CUSTOMIZADA ---
 st.markdown(
     """
     <style>
@@ -43,18 +40,15 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# --- 3. MENU LATERAL DE NAVEGAÇÃO ---
 st.sidebar.title('🚀 NEXSLOG Control')
 pagina = st.sidebar.radio(
     'Navegar para:', ['📊 Dashboard BI', '📥 Importar Arquivos']
 )
 
-# --- PÁGINA 1: DASHBOARD ---
 if pagina == '📊 Dashboard BI':
     st.title('🚚 NEXSLOG Hub: Inteligência Logística')
     st.markdown('Monitoramento estratégico de integração ERP ➔ WMS ➔ TMS')
 
-    # --- BUSCA E PROCESSAMENTO ---
     try:
         with Session(engine) as session:
             statement = select(Order)
@@ -86,7 +80,6 @@ if pagina == '📊 Dashboard BI':
                     )
                     df_filtered = df_filtered[mask]
 
-                # Meta de Faturamento
                 st.subheader('🎯 Meta de Faturamento do Dia')
                 faturamento_atual = df_filtered['total_value'].sum()
                 meta_diaria = 100000.0
@@ -99,7 +92,6 @@ if pagina == '📊 Dashboard BI':
 
                 st.divider()
 
-                # KPIs
                 col1, col2, col3, col4 = st.columns(4)
                 now = datetime.now()
                 atrasados = len(
@@ -128,7 +120,6 @@ if pagina == '📊 Dashboard BI':
                 col3.metric('Lead Time Médio', lead_time)
                 col4.metric('Faturamento Gerido', f'R$ {faturamento_atual:,.2f}')
 
-                # Gráficos e Tabela (Seu código original continua aqui...)
                 c1, c2 = st.columns(2)
 
                 with c1:
@@ -152,7 +143,6 @@ if pagina == '📊 Dashboard BI':
                 df_trend = df_filtered.copy().set_index('created_at')
                 st.line_chart(df_trend.resample('h').size(), color='#29b5e8')
 
-                # --- NOVO: SEÇÃO DE SAÚDE E PREDIÇÃO ---
                 st.divider()
                 col_h, col_p = st.columns([1, 2])
 
@@ -169,13 +159,11 @@ if pagina == '📊 Dashboard BI':
                     msg = predict_bottleneck(df)
                     st.info(msg)
 
-                # --- NOVO: MAPA DE DISTRIBUIÇÃO ---
                 st.divider()
                 st.subheader(
                     '🗺️ Capilaridade de Entregas (Distribuição Geográfica)'
                 )
 
-                # Mock de coordenadas para as cidades (Exemplo)
                 coords = {
                     'São Paulo': [-23.5505, -46.6333],
                     'Rio de Janeiro': [-22.9068, -43.1729],
@@ -183,7 +171,6 @@ if pagina == '📊 Dashboard BI':
                     'Belo Horizonte': [-19.9167, -43.9345],
                 }
 
-                # Criando dataframe para o mapa
                 map_data = df_filtered[
                     df_filtered['city'].isin(coords.keys())
                 ].copy()
@@ -217,7 +204,6 @@ if pagina == '📊 Dashboard BI':
     except Exception as e:
         st.error(f'❌ Erro: {e}')
 
-# --- PÁGINA 2: IMPORTAÇÃO ---
 else:
     st.title('📥 Importação Massiva de Dados')
     st.markdown('Suba arquivos Excel ou CSV para alimentar o Hub sem usar a API.')
